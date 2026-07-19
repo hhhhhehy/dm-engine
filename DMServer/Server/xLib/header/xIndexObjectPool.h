@@ -21,7 +21,8 @@ public:
 			m_ObjectPool.Del(id);
 			return nullptr;
 		}
-		pIndexObject->setId(id);
+		pIndexObject->Clean();	// 先清除旧状态（与deleteObject对称）
+		pIndexObject->setId(id);	// 再设置新ID
 		return pObject;
 	}
 	VOID deleteObject(T* pObject)

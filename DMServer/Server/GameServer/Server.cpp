@@ -166,6 +166,16 @@ SERVER_ERROR CServer::AddEnterAccount(UINT nLoginId, UINT nSelCharId, const char
 	ENTERGAMESERVER* pEnterInfo = nullptr;
 	UINT id = m_EnterObjects.New(&pEnterInfo);
 	if (id == 0 || pEnterInfo == nullptr)return SE_SERVERFULL;
+	// 检测 nLoginId 是否已经存在于哈希表中（覆盖会导致旧槽位泄露）
+	int* pExistId = m_Inthash.Find(nLoginId);
+	if (pExistId != nullptr)
+	{
+		ENTERGAMESERVER* pOld = m_EnterObjects.Get(static_cast<UINT>(*pExistId));
+		// 清理旧条目后再添加，防止槽位泄露
+		UINT oldId = static_cast<UINT>(*pExistId);
+		m_EnterObjects.Del(oldId);
+		m_Inthash.HDel(nLoginId);
+	}
 	if (!m_Inthash.HAdd(nLoginId, id))
 	{
 		m_EnterObjects.Del(id);
@@ -188,8 +198,19 @@ BOOL CServer::GetEnterInfo(UINT nLoginId, UINT nSelCharId, const char* pszAccoun
 	UINT id = (UINT)m_Inthash.HGet(nLoginId);
 	if (id == 0)return FALSE;
 	ENTERGAMESERVER* pEnterInfo = m_EnterObjects.Get(id);
-	if (pEnterInfo == nullptr)return FALSE;
-	if (pEnterInfo->nLoginId != nLoginId || pEnterInfo->nSelCharId != nSelCharId)return FALSE;
+	if (pEnterInfo == nullptr)
+	{
+		// 清理孤儿映射：哈希表有记录但ENTERGAMESERVER已被释放
+		m_Inthash.HDel(nLoginId);
+		return FALSE;
+	}
+	if (pEnterInfo->nLoginId != nLoginId || pEnterInfo->nSelCharId != nSelCharId)
+	{
+		// 验证失败，清理残留条目防止阻塞后续登录
+		m_EnterObjects.Del(id);
+		m_Inthash.HDel(nLoginId);
+		return FALSE;
+	}
 	enterinfo = *pEnterInfo;
 	m_EnterObjects.Del(id);
 	m_Inthash.HDel(nLoginId);

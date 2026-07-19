@@ -8,6 +8,7 @@ typedef struct tagREGISTEREDSERVER
 	DWORD dwConnections;
 }REGISTEREDSERVER;
 
+//客户端对象
 class CClientObj :
 	public CClientObject
 {

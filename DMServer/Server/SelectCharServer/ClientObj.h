@@ -21,6 +21,7 @@ typedef struct tagCHARLISTNODE
 	BYTE btWhat;
 }CHARLISTNODE;
 
+//客户端对象
 class CClientObj :
 	public CClientObject
 {

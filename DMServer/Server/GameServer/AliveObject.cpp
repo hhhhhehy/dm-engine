@@ -582,11 +582,12 @@ BOOL CAliveObject::GetViewmsg(char* pszMsg, int& length, CMapObject* pViewer)
 	WORD w1 = 100;
 	WORD wd = (dwMaxHp > 0) ? (dwHp * 100 / dwMaxHp) : 0; // 百分比取整
 	pdwData[2] = static_cast<DWORD>(MAKELONG(wd, w1));
-	int len = sprintf(szData + 12, "%s/%u", GetViewName(), GetNameColor(pViewer));
+	pdwData[3] = 0;
+	int len = sprintf(szData + 16, "%s/%u", GetViewName(), GetNameColor(pViewer));
 	// 在数据最后面插入15个空字节, 去过滤玩家、怪、宠物的一些独特封号
-	memcpy(szData + 12, szData + 12, static_cast<size_t>(len) + 15);
+	memcpy(szData + 16, szData + 16, static_cast<size_t>(len) + 15);
 	int totalLen = len + 15;
-	length = EncodeMsg(pszMsg, GetId(), wCmd, m_wX, m_wY, (GetSex() << 8) | m_Direction, (LPVOID)szData, 12 + totalLen);
+	length = EncodeMsg(pszMsg, GetId(), wCmd, m_wX, m_wY, (GetSex() << 8) | m_Direction, (LPVOID)szData, 16 + totalLen);
 	if (GetType() == OBJ_PLAYER && pViewer && pViewer->GetType() == OBJ_PLAYER)
 		((CAliveObject*)pViewer)->SendFeatureChanged();
 	return TRUE;
